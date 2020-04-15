@@ -5,12 +5,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.view.View;
 import android.net.Uri;
 
 import androidx.appcompat.app.AppCompatActivity;
-
+import org.pjsip.pjsua2.Endpoint;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
@@ -18,11 +19,12 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import java.util.ArrayList;
+
 import cn.nodemedia.NodePlayer;
 import cn.nodemedia.NodePlayerView;
 
 public class UnlockScreenActivity extends AppCompatActivity implements UnlockScreenActivityInterface {
-
     private static final String TAG = "MessagingService";
     private NodePlayer mNodePlayer;
     private TextView tvBody;
@@ -99,7 +101,7 @@ public class UnlockScreenActivity extends AppCompatActivity implements UnlockScr
             @Override
             public void onClick(View view) {
                 try {
-                    acceptDialing();
+                    acceptDialing(view);
                 } catch (Exception e) {
                     WritableMap params = Arguments.createMap();
                     params.putString("message", e.getMessage());
@@ -123,7 +125,7 @@ public class UnlockScreenActivity extends AppCompatActivity implements UnlockScr
         // Dont back
     }
 
-    private void acceptDialing() {
+    private void acceptDialing(View view) {
         // Intent i = new Intent(this, MainActivity.class);
         Intent i = IncomingCallModule.reactContext.getPackageManager().getLaunchIntentForPackage(packageName);
         if (i != null) {
@@ -141,7 +143,20 @@ public class UnlockScreenActivity extends AppCompatActivity implements UnlockScr
         params.putBoolean("done", true);
         params.putString("uuid", uuid);
         sendEvent("answerCall", params);
-        finish();
+
+
+        view.setVisibility(View.GONE);
+        Bundle bundle = getIntent().getExtras();
+        if (bundle.containsKey("doors")) {
+            ArrayList<Integer> doors=bundle.getIntegerArrayList("doors");
+            LinearLayout container=findViewById(R.id.buttonContainer);
+//            LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+//            ll.addView(myButton, lp);
+
+
+
+        }
+//        finish();
     }
 
     private void dismissDialing() {

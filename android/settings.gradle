@@ -1,0 +1,2 @@
+include ':react-native-sip'
+project(':react-native-sip').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-sip/android')
