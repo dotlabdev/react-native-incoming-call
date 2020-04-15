@@ -18,13 +18,19 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import cn.nodemedia.NodePlayer;
+import cn.nodemedia.NodePlayerView;
+
 public class UnlockScreenActivity extends AppCompatActivity implements UnlockScreenActivityInterface {
 
     private static final String TAG = "MessagingService";
+    private NodePlayer mNodePlayer;
     private TextView tvBody;
     private TextView tvName;
-    private ImageView ivAvatar;
+    private TextView tvNumber;
+    private NodePlayerView player;
     private String uuid = "";
+    private String packageName = "";
     static boolean active = false;
 
     @Override
@@ -47,7 +53,8 @@ public class UnlockScreenActivity extends AppCompatActivity implements UnlockScr
 
         tvBody = findViewById(R.id.tvBody);
         tvName = findViewById(R.id.tvName);
-        ivAvatar = findViewById(R.id.ivAvatar);
+        tvNumber=findViewById(R.id.tvPhoneNumber);
+        player = findViewById(R.id.play_surface);
 
         Bundle bundle = getIntent().getExtras();
         if (bundle != null) {
@@ -59,10 +66,25 @@ public class UnlockScreenActivity extends AppCompatActivity implements UnlockScr
                 String displayName = bundle.getString("displayName");
                 tvName.setText(displayName);
             }
+            if (bundle.containsKey("number")) {
+                String displayName = bundle.getString("number");
+                tvNumber.setText(displayName);
+            }
+            if (bundle.containsKey("packageName")) {
+                String packageName = bundle.getString("packageName");
+            }
             if (bundle.containsKey("avatar")) {
-                String avatar = bundle.getString("avatar");
-                Uri avatarUri = Uri.parse(avatar);
-                ivAvatar.setImageURI(avatarUri);
+                String playerUri = bundle.getString("avatar");
+
+                mNodePlayer = new NodePlayer(this);
+                mNodePlayer.setPlayerView(player);
+                mNodePlayer.setInputUrl(playerUri);
+                NodePlayerView.UIViewContentMode mode = NodePlayerView.UIViewContentMode.valueOf("ScaleAspectFill");
+                player.setUIViewContentMode(mode);
+                mNodePlayer.setAudioEnable(false);
+                mNodePlayer.setBufferTime(300);
+                mNodePlayer.setMaxBufferTime(1000);
+                mNodePlayer.start();
             }
             if (bundle.containsKey("uuid")) {
                 uuid = bundle.getString("uuid");
@@ -103,19 +125,17 @@ public class UnlockScreenActivity extends AppCompatActivity implements UnlockScr
 
     private void acceptDialing() {
         // Intent i = new Intent(this, MainActivity.class);
-        String packageName = getPackageName();
-
-//         Intent i = getPackageManager().getLaunchIntentForPackage(packageName);
-//         if (i != null) {
-//             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-//             i.putExtra("uuid", uuid);
-//             startActivity(i);
-//         } else {
-//             // No intent
-//             WritableMap params = Arguments.createMap();
-//             params.putString("message", "No intent");
-//             sendEvent("error", params);
-//         }
+        Intent i = IncomingCallModule.reactContext.getPackageManager().getLaunchIntentForPackage(packageName);
+        if (i != null) {
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            i.putExtra("uuid", uuid);
+            IncomingCallModule.reactContext.startActivity(i);
+        } else {
+            // No intent
+            WritableMap params = Arguments.createMap();
+            params.putString("message", "No intent");
+            sendEvent("error", params);
+        }
 
         WritableMap params = Arguments.createMap();
         params.putBoolean("done", true);
@@ -125,6 +145,7 @@ public class UnlockScreenActivity extends AppCompatActivity implements UnlockScr
     }
 
     private void dismissDialing() {
+        mNodePlayer.stop();
         WritableMap params = Arguments.createMap();
         params.putBoolean("done", false);
         params.putString("uuid", uuid);
