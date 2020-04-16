@@ -25,7 +25,7 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void display() {
+    public void display(String number) {
         String packageNames = reactContext.getPackageName();
         Intent launchIntent = reactContext.getPackageManager().getLaunchIntentForPackage(packageNames);
         String className = launchIntent.getComponent().getClassName();
@@ -34,7 +34,7 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
                 Intent i = new Intent(reactContext, activityClass);
                 if (reactContext != null) {
                     i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
+                    i.putExtra("number",number);
                     i.putExtra("fromBackground", true);
                     reactContext.startActivity(i);
                 }

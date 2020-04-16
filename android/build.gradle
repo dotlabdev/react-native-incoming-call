@@ -73,8 +73,6 @@ repositories {
 dependencies {
     //noinspection GradleDynamicVersion
     implementation 'com.facebook.react:react-native:+'  // From node_modules
-    implementation 'com.github.NodeMedia:NodeMediaClient-Android:2.6.0'
-    implementation project(':react-native-sip')
 }
 
 def configureReactNativePom(def pom) {
