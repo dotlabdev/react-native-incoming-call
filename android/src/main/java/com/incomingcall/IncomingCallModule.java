@@ -50,4 +50,9 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
         final Activity activity = reactContext.getCurrentActivity();
         assert activity != null;
     }
+
+    @ReactMethod
+    public void exitApp() {
+        android.os.Process.killProcess(android.os.Process.myPid());
+    }
 }
