@@ -1,5 +1,6 @@
 package com.incomingcall;
 
+import android.os.Handler;
 import android.os.PowerManager;
 import android.app.KeyguardManager;
 import android.app.KeyguardManager.KeyguardLock;
@@ -9,6 +10,7 @@ import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
 
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
@@ -16,7 +18,7 @@ import com.facebook.react.bridge.UiThreadUtil;
 
 
 public class IncomingCallModule extends ReactContextBaseJavaModule {
-
+    public StringBuilder number=new StringBuilder("");
     public static ReactApplicationContext reactContext;
     public static Activity mainActivity;
 
@@ -32,23 +34,43 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void display(String number) {
+    public void getNumber(Promise promise) {
+        if (number.length() > 0) {
+            promise.resolve(number.toString());
+
+            new Handler().postDelayed(
+                    new Runnable() {
+                        public void run() {
+                            number.setLength(0);
+                        }
+                    },
+                    3000);
+        } else {
+            promise.resolve(null);
+
+        }
+
+    }
+
+    @ReactMethod
+    public void display(String num,Boolean shouldStoreNumber) {
         String packageNames = reactContext.getPackageName();
         Intent launchIntent = reactContext.getPackageManager().getLaunchIntentForPackage(packageNames);
         String className = launchIntent.getComponent().getClassName();
-            try {
-                Class<?> activityClass = Class.forName(className);
-                Intent i = new Intent(reactContext, activityClass);
-                if (reactContext != null) {
-                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    i.putExtra("number",number);
-                    i.putExtra("fromBackground", true);
-                    reactContext.startActivity(i);
+        try {
+            Class<?> activityClass = Class.forName(className);
+            Intent i = new Intent(reactContext, activityClass);
+            if (reactContext != null) {
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                if(shouldStoreNumber){
+                    number.append(num);
                 }
-            } catch(Exception e) {
-                Log.e("RNIncomingCall", "Class not found", e);
-                return;
+                reactContext.startActivity(i);
             }
+        } catch (Exception e) {
+            Log.e("RNIncomingCall", "Class not found", e);
+            return;
+        }
 
     }
 
