@@ -10,15 +10,18 @@ import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.UiThreadUtil;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 
 public class IncomingCallModule extends ReactContextBaseJavaModule {
-    public StringBuilder number=new StringBuilder("");
+    public StringBuilder number = new StringBuilder("");
     public static ReactApplicationContext reactContext;
     public static Activity mainActivity;
 
@@ -53,7 +56,7 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void display(String num,Boolean shouldStoreNumber) {
+    public void display(String num, Boolean shouldStoreNumber) {
         String packageNames = reactContext.getPackageName();
         Intent launchIntent = reactContext.getPackageManager().getLaunchIntentForPackage(packageNames);
         String className = launchIntent.getComponent().getClassName();
@@ -62,9 +65,10 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
             Intent i = new Intent(reactContext, activityClass);
             if (reactContext != null) {
                 i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                if(shouldStoreNumber){
+                if (shouldStoreNumber) {
                     number.append(num);
                 }
+
                 reactContext.startActivity(i);
             }
         } catch (Exception e) {
@@ -104,8 +108,11 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
                                 | PowerManager.ACQUIRE_CAUSES_WAKEUP
                                 | PowerManager.SCREEN_BRIGHT_WAKE_LOCK
                                 | PowerManager.ON_AFTER_RELEASE, "IncomingCallModule:mywake");
-
-                wakeLock.acquire();
+                wakeLock.setReferenceCounted(false);
+                if ((wakeLock != null) &&           // we have a WakeLock
+                        (wakeLock.isHeld() == false)) {  // but we don't hold it
+                    wakeLock.acquire();
+                }
 
                 Window window = mCurrentActivity.getWindow();
                 window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
