@@ -21,6 +21,17 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
     public StringBuilder number=new StringBuilder("");
     public static ReactApplicationContext reactContext;
     public static Activity mainActivity;
+    private static final int WINDOW_MANAGER_FLAGS =WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON;
+
+    private static final int POWER_MANAGER_FLAGS    =PowerManager.FULL_WAKE_LOCK
+                                | PowerManager.ACQUIRE_CAUSES_WAKEUP
+                                | PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+                                | PowerManager.ON_AFTER_RELEASE;
+
+    private static final int INTENT_FLAGS=Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP;
 
     public IncomingCallModule(ReactApplicationContext context) {
         super(context);
@@ -61,7 +72,7 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
             Class<?> activityClass = Class.forName(className);
             Intent i = new Intent(reactContext, activityClass);
             if (reactContext != null) {
-                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                i.addFlags(INTENT_FLAGS);
                 if(shouldStoreNumber){
                     number.append(num);
                 }
@@ -100,18 +111,28 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
 
                 PowerManager powerManager = (PowerManager) reactContext.getSystemService(reactContext.POWER_SERVICE);
                 PowerManager.WakeLock wakeLock = powerManager.newWakeLock(
-                        PowerManager.FULL_WAKE_LOCK
-                                | PowerManager.ACQUIRE_CAUSES_WAKEUP
-                                | PowerManager.SCREEN_BRIGHT_WAKE_LOCK
-                                | PowerManager.ON_AFTER_RELEASE, "IncomingCallModule:mywake");
+                        POWER_MANAGER_FLAGS, "IncomingCallModule:mywake");
 
                 wakeLock.acquire();
 
                 Window window = mCurrentActivity.getWindow();
-                window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
-                        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
-                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
-                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+                window.addFlags(WINDOW_MANAGER_FLAGS);
+            }
+        });
+    }
+
+    @ReactMethod
+    public void resetFlags(){
+  UiThreadUtil.runOnUiThread(new Runnable() {
+            public void run() {
+                Activity mCurrentActivity = getCurrentActivity();
+                if (mCurrentActivity == null) {
+                    return;
+                }
+               
+
+                Window window = mCurrentActivity.getWindow();
+                window.clearFlags(WINDOW_MANAGER_FLAGS | POWER_MANAGER_FLAGS | INTENT_FLAGS);
             }
         });
     }
