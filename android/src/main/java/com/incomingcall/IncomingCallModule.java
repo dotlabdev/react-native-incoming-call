@@ -1,5 +1,7 @@
 package com.incomingcall;
 
+import android.content.Context;
+import android.media.AudioManager;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.app.KeyguardManager;
@@ -18,20 +20,19 @@ import com.facebook.react.bridge.UiThreadUtil;
 
 
 public class IncomingCallModule extends ReactContextBaseJavaModule {
-    public StringBuilder number=new StringBuilder("");
+    public StringBuilder number = new StringBuilder("");
     public static ReactApplicationContext reactContext;
     public static Activity mainActivity;
-    private static final int WINDOW_MANAGER_FLAGS =WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
-                        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
-                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
-                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON;
+    private static final int WINDOW_MANAGER_FLAGS = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON;
 
-    private static final int POWER_MANAGER_FLAGS    =PowerManager.FULL_WAKE_LOCK
-                                | PowerManager.ACQUIRE_CAUSES_WAKEUP
-                                | PowerManager.SCREEN_BRIGHT_WAKE_LOCK
-                                | PowerManager.ON_AFTER_RELEASE;
+    private static final int POWER_MANAGER_FLAGS = PowerManager.FULL_WAKE_LOCK
+            | PowerManager.ACQUIRE_CAUSES_WAKEUP
+            | PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+            | PowerManager.ON_AFTER_RELEASE;
 
-    private static final int INTENT_FLAGS=Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP;
+    private static final int INTENT_FLAGS = Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP;
 
     public IncomingCallModule(ReactApplicationContext context) {
         super(context);
@@ -64,7 +65,7 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void display(String num,Boolean shouldStoreNumber) {
+    public void display(String num, Boolean shouldStoreNumber) {
         String packageNames = reactContext.getPackageName();
         Intent launchIntent = reactContext.getPackageManager().getLaunchIntentForPackage(packageNames);
         String className = launchIntent.getComponent().getClassName();
@@ -73,7 +74,7 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
             Intent i = new Intent(reactContext, activityClass);
             if (reactContext != null) {
                 i.addFlags(INTENT_FLAGS);
-                if(shouldStoreNumber){
+                if (shouldStoreNumber) {
                     number.append(num);
                 }
                 reactContext.startActivity(i);
@@ -104,9 +105,12 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
                 if (mCurrentActivity == null) {
                     return;
                 }
+
                 KeyguardManager keyguardManager = (KeyguardManager) reactContext.getSystemService(reactContext.KEYGUARD_SERVICE);
 
                 KeyguardLock keyguardLock = keyguardManager.newKeyguardLock(reactContext.KEYGUARD_SERVICE);
+
+
                 keyguardLock.disableKeyguard();
 
                 PowerManager powerManager = (PowerManager) reactContext.getSystemService(reactContext.POWER_SERVICE);
@@ -116,24 +120,48 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
                 wakeLock.acquire();
 
                 Window window = mCurrentActivity.getWindow();
-                window.addFlags(WINDOW_MANAGER_FLAGS);
+                window.addFlags(WINDOW_MANAGER_FLAGS | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON );
             }
         });
     }
 
     @ReactMethod
-    public void resetFlags(){
-  UiThreadUtil.runOnUiThread(new Runnable() {
+    public void resetFlags() {
+        UiThreadUtil.runOnUiThread(new Runnable() {
             public void run() {
                 Activity mCurrentActivity = getCurrentActivity();
                 if (mCurrentActivity == null) {
                     return;
                 }
-               
 
                 Window window = mCurrentActivity.getWindow();
                 window.clearFlags(WINDOW_MANAGER_FLAGS | POWER_MANAGER_FLAGS | INTENT_FLAGS);
             }
         });
     }
+
+    @ReactMethod
+    public void isMuted(final Promise promise) {
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            public void run() {
+                try {
+                    Activity mCurrentActivity = getCurrentActivity();
+                    if (mCurrentActivity == null) {
+                        promise.reject("NO CURRENT ACTIVITY FOUND");
+                    }
+
+                    AudioManager audio = (AudioManager) mCurrentActivity.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+
+                    if (audio.getRingerMode() == AudioManager.RINGER_MODE_NORMAL)
+                        promise.resolve(false);
+                    else promise.resolve(true);
+
+                } catch (Exception e) {
+                    Log.e("RNIncomingCall", "getRingerMode", e);
+                    promise.reject(e);
+                }
+            }
+        });
+    }
+
 }
