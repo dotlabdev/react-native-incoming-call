@@ -20,6 +20,7 @@ import com.facebook.react.bridge.UiThreadUtil;
 
 
 public class IncomingCallModule extends ReactContextBaseJavaModule {
+    private PowerManager.WakeLock mWakeLock;
     public StringBuilder number = new StringBuilder("");
     public static ReactApplicationContext reactContext;
     public static Activity mainActivity;
@@ -114,13 +115,13 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
                 keyguardLock.disableKeyguard();
 
                 PowerManager powerManager = (PowerManager) reactContext.getSystemService(reactContext.POWER_SERVICE);
-                PowerManager.WakeLock wakeLock = powerManager.newWakeLock(
+                mWakeLock = powerManager.newWakeLock(
                         POWER_MANAGER_FLAGS, "IncomingCallModule:mywake");
 
-                wakeLock.acquire();
+                mWakeLock.acquire();
 
                 Window window = mCurrentActivity.getWindow();
-                window.addFlags(WINDOW_MANAGER_FLAGS | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON );
+                window.addFlags(WINDOW_MANAGER_FLAGS | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             }
         });
     }
@@ -129,6 +130,10 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
     public void resetFlags() {
         UiThreadUtil.runOnUiThread(new Runnable() {
             public void run() {
+                if (mWakeLock.isHeld()) {
+                    mWakeLock.release();
+                }
+                mWakeLock = null;
                 Activity mCurrentActivity = getCurrentActivity();
                 if (mCurrentActivity == null) {
                     return;
