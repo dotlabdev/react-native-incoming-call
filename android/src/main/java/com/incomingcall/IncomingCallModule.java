@@ -21,12 +21,10 @@ import com.facebook.react.bridge.UiThreadUtil;
 
 public class IncomingCallModule extends ReactContextBaseJavaModule {
     private PowerManager.WakeLock mWakeLock;
-    public StringBuilder number = new StringBuilder("");
     public static ReactApplicationContext reactContext;
     public static Activity mainActivity;
-    private static final int WINDOW_MANAGER_FLAGS = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
-            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
-            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON;
+    private static final int WINDOW_MANAGER_FLAGS = WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 
     private static final int POWER_MANAGER_FLAGS = PowerManager.FULL_WAKE_LOCK
             | PowerManager.ACQUIRE_CAUSES_WAKEUP
@@ -47,26 +45,7 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void getNumber(Promise promise) {
-        if (number.length() > 0) {
-            promise.resolve(number.toString());
-
-            new Handler().postDelayed(
-                    new Runnable() {
-                        public void run() {
-                            number.setLength(0);
-                        }
-                    },
-                    3000);
-        } else {
-            promise.resolve(null);
-
-        }
-
-    }
-
-    @ReactMethod
-    public void display(String num, Boolean shouldStoreNumber) {
+    public void display() {
         String packageNames = reactContext.getPackageName();
         Intent launchIntent = reactContext.getPackageManager().getLaunchIntentForPackage(packageNames);
         String className = launchIntent.getComponent().getClassName();
@@ -75,9 +54,7 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
             Intent i = new Intent(reactContext, activityClass);
             if (reactContext != null) {
                 i.addFlags(INTENT_FLAGS);
-                if (shouldStoreNumber) {
-                    number.append(num);
-                }
+
                 reactContext.startActivity(i);
             }
         } catch (Exception e) {
@@ -85,12 +62,6 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
             return;
         }
 
-    }
-
-    @ReactMethod
-    public void dismiss() {
-        final Activity activity = reactContext.getCurrentActivity();
-        assert activity != null;
     }
 
     @ReactMethod
@@ -121,7 +92,7 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
                 mWakeLock.acquire();
 
                 Window window = mCurrentActivity.getWindow();
-                window.addFlags(WINDOW_MANAGER_FLAGS | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                window.addFlags(WINDOW_MANAGER_FLAGS);
             }
         });
     }
