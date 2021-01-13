@@ -101,10 +101,12 @@ public class IncomingCallModule extends ReactContextBaseJavaModule {
     public void resetFlags() {
         UiThreadUtil.runOnUiThread(new Runnable() {
             public void run() {
-                if (mWakeLock.isHeld()) {
-                    mWakeLock.release();
+                if (mWakeLock != null) {
+                    if (mWakeLock.isHeld()) {
+                        mWakeLock.release();
+                    }
+                    mWakeLock = null;
                 }
-                mWakeLock = null;
                 Activity mCurrentActivity = getCurrentActivity();
                 if (mCurrentActivity == null) {
                     return;
